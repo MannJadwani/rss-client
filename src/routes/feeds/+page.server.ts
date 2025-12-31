@@ -2,7 +2,7 @@ import { db } from '$lib/server/db';
 import { subscriptions } from '$lib/server/db/schema';
 import { syncFeed } from '$lib/server/rss';
 import { error, redirect } from '@sveltejs/kit';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -25,6 +25,15 @@ export const actions: Actions = {
         const feedUrl = formData.get('feedUrl') as string;
 
         if (!feedUrl) return { success: false, error: 'URL is required' };
+
+        const existing = await db.query.subscriptions.findFirst({
+            where: and(
+                eq(subscriptions.userId, locals.user.id),
+                eq(subscriptions.feedUrl, feedUrl)
+            )
+        });
+
+        if (existing) return { success: false, error: 'Already subscribed' };
 
         const id = crypto.randomUUID();
         await db.insert(subscriptions).values({

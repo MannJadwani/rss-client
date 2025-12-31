@@ -1,8 +1,10 @@
 import { loadArticles } from '$lib/server/articles';
+import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
-    const articles = await loadArticles('', locals.user?.id);
+    if (!locals.user) throw redirect(302, '/login');
+    const articles = await loadArticles('', locals.user.id);
     return {
         articles,
         filter: ''

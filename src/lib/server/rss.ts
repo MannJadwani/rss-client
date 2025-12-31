@@ -2,6 +2,7 @@ import Parser from 'rss-parser';
 import { db } from './db';
 import { articles, subscriptions } from './db/schema';
 import { eq, sql } from 'drizzle-orm';
+import crypto from 'node:crypto';
 
 const parser = new Parser();
 
@@ -40,8 +41,9 @@ export async function syncFeed(subscriptionId: string) {
             const guid = item.id || item.guid || item.link || item.title;
             if (!guid) continue;
 
-            // Simple hash or ID for dedup
-            const articleId = `${Buffer.from(guid).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')}`;
+            // Simple hash or ID for dedup - scoped to feedUrl for isolation
+            const rawId = `${sub.feedUrl}::${guid}`;
+            const articleId = crypto.createHash('sha256').update(rawId).digest('hex');
 
             const publishedAt = item.pubDate ? new Date(item.pubDate) : new Date();
             const contentText = (item.contentSnippet || item.content || item.title || '').substring(0, 10000);
@@ -105,6 +107,7 @@ export async function searchArticles(query: string, userId: string) {
         return await db.execute(sql`
             SELECT a.*, ua.is_read, ua.is_saved
             FROM articles a
+            INNER JOIN subscriptions s ON a.feed_url = s.feed_url AND s.user_id = ${userId}
             LEFT JOIN user_articles ua ON a.id = ua.article_id AND ua.user_id = ${userId}
             WHERE a.search_vector @@ to_tsquery('english', ${prefixQuery})
             ORDER BY ts_rank(a.search_vector, to_tsquery('english', ${prefixQuery})) DESC
@@ -116,6 +119,7 @@ export async function searchArticles(query: string, userId: string) {
         return await db.execute(sql`
             SELECT a.*, ua.is_read, ua.is_saved
             FROM articles a
+            INNER JOIN subscriptions s ON a.feed_url = s.feed_url AND s.user_id = ${userId}
             LEFT JOIN user_articles ua ON a.id = ua.article_id AND ua.user_id = ${userId}
             WHERE a.search_vector @@ plainto_tsquery('english', ${sanitized})
             ORDER BY ts_rank(a.search_vector, plainto_tsquery('english', ${sanitized})) DESC
