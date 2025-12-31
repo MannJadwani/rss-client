@@ -3,6 +3,11 @@
 	const { article, userState } = data;
 </script>
 
+<svelte:head>
+	<title>{article.title} | RSS Client</title>
+	<meta name="description" content={article.summary || article.title} />
+</svelte:head>
+
 <div class="p-4 max-w-3xl mx-auto">
 	<div class="mb-4">
 		<a href="/" class="hn-gray text-xs hover:underline">← back to list</a>

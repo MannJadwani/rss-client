@@ -5,9 +5,9 @@
 <div class="border-t-2 border-[#b91c1c] mt-2">
 	{#each articles as article, i}
 		<div class="jp-article-item group">
-			<!-- Date / Time Column -->
+			<!-- Date / Time Column (Desktop) -->
 			<div
-				class="w-[80px] shrink-0 text-[11px] text-[#666] pt-0.5 font-mono"
+				class="hidden md:block w-[80px] shrink-0 text-[11px] text-[#666] pt-0.5 font-mono"
 			>
 				{new Date(article.publishedAt || Date.now()).toLocaleDateString(
 					undefined,
@@ -56,7 +56,16 @@
 					</div>
 				{/if}
 
-				<div class="flex items-center gap-3 text-[11px] text-[#666]">
+				<div
+					class="flex flex-wrap items-center gap-2 md:gap-3 text-[11px] text-[#666]"
+				>
+					<!-- Mobile Date -->
+					<span class="md:hidden font-mono text-[#888]">
+						{new Date(
+							article.publishedAt || Date.now(),
+						).toLocaleDateString()}
+					</span>
+
 					{#if article.author}
 						<span class="bg-[#eee] px-1 rounded-sm"
 							>{article.author}</span
